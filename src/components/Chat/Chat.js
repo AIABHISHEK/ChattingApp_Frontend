@@ -9,6 +9,8 @@ let socket;
 const Chat = () => {
     const [name, setName] = useState('');
     const [room, setRoom] = useState('');
+    const [messages, setMessages] = useState([]);
+    const [message, setMessage] = useState('');
     const URL = 'http://localhost:5000'
     useEffect(()=>{
         let pageHref = window.location.search;
@@ -20,7 +22,11 @@ const Chat = () => {
         console.log(socket);
         setName(name);
         setRoom(room);
-        socket.emit('join', {name, room});
+        socket.emit('join', {name, room}, () => {  });
+        
+        socket.on('joined_room', (data)=>{
+            console.log(data);
+        });
 
         return () => {
             // when this component dismount disconnect and turn off socket for this instance of client
@@ -28,8 +34,23 @@ const Chat = () => {
             socket.off();
         }
     },[URL, window.location.search])
+
+    useEffect(()=>{
+        socket.on('message', (message)=>{
+            console.log(message);
+            setMessages([...messages, message]);
+        });
+    }, [messages]);
+    function sendMessage(event){
+        event.preventDefault();
+        socket.emit('sendMessage', {name, message}, () => setMessage(''));
+    }
     return (
-        <h1> hello </h1>
+        <div className='outerContainer'>
+            <div className='container'>
+                <input type="text" defaultValue={message} value={message} name='message' onChange={(e) => setMessage(e.target.value)} onKeyDownCapture={(e) => e.key === 'Enter' ? sendMessage(e):null} />
+            </div>
+        </div>
     )
 }
 
