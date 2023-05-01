@@ -2,6 +2,12 @@ import React , {useEffect, useState} from 'react';
 import io from 'socket.io-client';
 // import queryString from 'query-string';
 import { useSearchParams } from 'react-router-dom';
+import Infobar from '../../components/Infobar';
+import Input from '../../components/Input/Input';
+import Messages from '../../components/Messages/Messages';
+
+import './Chat.css';
+
 
 let socket;
 
@@ -23,10 +29,6 @@ const Chat = () => {
         setName(name);
         setRoom(room);
         socket.emit('join', {name, room}, () => {  });
-        
-        socket.on('joined_room', (data)=>{
-            console.log(data);
-        });
 
         return () => {
             // when this component dismount disconnect and turn off socket for this instance of client
@@ -41,6 +43,19 @@ const Chat = () => {
             setMessages([...messages, message]);
         });
     }, [messages]);
+    useEffect(() => {
+        socket.on('UserJoinMessage', (message) => {
+            console.log(message);
+            setMessages([...messages ,message]);
+        });
+    }, [messages]);
+    useEffect(() => {
+        socket.on('WelcomeMessage', (message) => {
+            console.log(message);
+            setMessages([message]);
+        });
+    }, [messages]);
+
     function sendMessage(event){
         event.preventDefault();
         socket.emit('sendMessage', {name, message}, () => setMessage(''));
@@ -48,7 +63,12 @@ const Chat = () => {
     return (
         <div className='outerContainer'>
             <div className='container'>
-                <input type="text" defaultValue={message} value={message} name='message' onChange={(e) => setMessage(e.target.value)} onKeyDownCapture={(e) => e.key === 'Enter' ? sendMessage(e):null} />
+                <Infobar room={room} />
+                
+                <div className='all-messages'>
+                    <Messages messages={messages} name={name} />
+                </div>
+                <Input message={message} setMessage={setMessage} sendMessage={sendMessage} />
             </div>
         </div>
     )
